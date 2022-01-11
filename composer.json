@@ -1,0 +1,15 @@
+{
+    "name": "The CodeIgniter framework",
+    "require": {
+        "bower-asset/bootstrap": "^3.3",
+        "npm-asset/jquery": "^2.2",
+        "npm-asset/popper.js": "^2.11",
+        "npm-asset/datatables": "^1.10"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ]
+}
