@@ -42,7 +42,7 @@ class Dept_info extends CI_Controller
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
 
         // 取得匯入資料
-        $data = $this->input->input_stream();
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
         // 過濾可輸入資料
         $data = array_intersect_key($data, array_flip($this->_columms));

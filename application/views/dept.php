@@ -12,10 +12,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
     <script src="/vendor/npm-asset/jquery/dist/jquery.min.js"></script>
     <script src="/vendor/npm-asset/popper.js"></script>
     <script src="/vendor/bower-asset/bootstrap/dist/js/bootstrap.min.js"></script>
-    <!-- Font Awesome Icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css" />
+    <script src="vendor/npm-asset/axios/dist/axios.min.js"></script>
+    <script src="vendor/bower-asset/bootstrap4-dialog-gedmarc/dist/js/bootstrap-dialog.js"></script>
 
-    <script src="<?= JS_DIR; ?>bootstrap/deptAjax.js"></script>
+    <script src="<?= JS_DIR; ?>bootstrap/crud-es5.js"></script>
 
     <style>
         .float-right {
@@ -30,7 +30,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
         <!-- Title -->
         <div class="row">
             <div class="col-sm-12">
-                <h1>部門管理</h1>
+                <h1 id="page-title">部門管理</h1>
             </div>
         </div>
 
@@ -41,21 +41,22 @@ defined('BASEPATH') or exit('No direct script access allowed');
             </div>
             <div class="col-sm-4"><button id="select_btn" class="btn btn-primary">搜尋</button></div>
 
-            <div class="col-sm-4"><button id="creat_btn" class="btn btn-warning float-right" data-toggle="modal" data-target="#myModal">新增</button></div>
+            <div class="col-sm-4"><button id="add-btn" class="btn btn-warning float-right" data-toggle="modal" data-target="#myModal">新增</button></div>
         </div>
 
-        <table id="table" class="table table-striped table-dark table-hover">
+        <table id="table" class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th id="d_code">代碼</th>
-                    <th id="d_name">名稱</th>
-                    <th id="d_level">層級</th>
-                    <th id="date_start">開始日</th>
-                    <th id="date_end">結束日</th>
-                    <th id="remark">備註</th>
+                    <th width="25%"></th>
+                    <th id="d_code" width="10%">代碼</th>
+                    <th id="d_name" width="15%">名稱</th>
+                    <th id="d_level" width="10%">層級</th>
+                    <th id="date_start" width="15%">開始日</th>
+                    <th id="date_end" width="15%">結束日</th>
+                    <th id="remark" width="10%">備註</th>
                 </tr>
             </thead>
+            <!-- Data List -->
             <tbody>
             </tbody>
         </table>
@@ -65,80 +66,74 @@ defined('BASEPATH') or exit('No direct script access allowed');
         </div>
 
         <!-- Pagination -->
-        <div class="row float-right">
+        <div id='pagination' class="row float-right">
             <ul class="pagination">
             </ul>
         </div>
     </div>
 
-    <!-- The Modal -->
-    <div class="modal" id="myModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-
-                <!-- Modal Header -->
-                <div class="modal-header">
-                    <h4 class="modal-title">部門資料</h4>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-
-                <!-- Modal body -->
-                <div class="modal-body">
-                    <form id="form">
-                        <!-- label 綁 for，在點擊 label 內容時，等效於點擊 input -->
-                        <div class="form-group" hidden>
-                            <label for="id">id</label>
-                            <input type="text" class="form-control" id="id" name="id" value="">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="d_code">d_code</label>
-                            <input type="text" class="form-control" id="d_code" name="d_code">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="d_name">d_name</label>
-                            <input type="text" class="form-control" id="d_name" name="d_name">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="d_level">d_level</label>
-                            <select id="d_level" name="d_level" class="form-control">
-                                <option value="部">部</option>
-                                <option value="處">處</option>
-                                <option value="科">科</option>
-                                <option value="室">室</option>
-                                <option value="組">組</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="date_start">date_start</label>
-                            <input type="date" class="form-control" id="date_start" name="date_start">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="date_end">date_end</label>
-                            <input type="date" class="form-control" id="date_end" name="date_end">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="remark">remark</label>
-                            <input type="text" class="form-control" id="remark" name="remark">
-                        </div>
-
-
-                    </form>
-                </div>
-
-                <!-- Modal footer -->
-                <div class="modal-footer">
-                    <button id="button" type="submit" class="btn btn-primary float-right">Submit</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
 </body>
 
 </html>
+
+<script>
+    $(document).ready(function() {
+        // 產生頁面主題
+        $('body').find('#page-title').text(window.mainPage.pageTitle);
+
+        // 新增使用者資料
+        $('#add-btn').on('click', function(e) {
+            e.preventDefault();
+
+            // 呼叫頁面封裝內的開啟彈窗方法
+            window.mainPage.showEditDialog({
+                onSave: function(dialog, formData) {
+                    // 驗證資料
+                    let errorMessage = this.validate(dialog);
+
+                    if (errorMessage.length > 0) {
+                        alert(errorMessage);
+                        return false;
+                    } else {
+                        axios.post(window.mainPage.api.userInfo, {
+                            d_code: dialog.initSelector.$d_code.val(),
+                            d_name: dialog.initSelector.$d_name.val(),
+                            d_level: dialog.initSelector.$d_level.val(),
+                            date_start: dialog.initSelector.$date_start.val(),
+                            date_end: dialog.initSelector.$date_end.val(),
+                            remark: dialog.initSelector.$remark.val(),
+                        }).then(function(response) {
+                            if (response.status && response.status === 200) {
+                                window.mainPage.refetchTable();
+                            }
+                        }).catch(function(error) {
+                            console.log(error);
+                        });
+                    }
+                },
+            });
+        });
+
+        // 綁定搜尋條件事件
+        $('#select_btn').on('click', function() {
+            let searchValue = $('#select').val();
+            window.mainPage.condition.search = searchValue;
+
+            window.mainPage.refetchTable();
+        });
+
+        // 綁定排序表格事件
+        $('th:not(:first-child)').on('click', function() {
+            // 如果為第二次點擊，則為相反排序
+            if (window.mainPage.condition.sortBy === this.id) {
+                window.mainPage.condition.sortType = window.mainPage.condition.sortType === 'asc' ? 'desc' : 'asc';
+            } else {
+                window.mainPage.condition.sortType = 'asc';
+            }
+            // 排序欄位
+            window.mainPage.condition.sortBy = this.id;
+
+            window.mainPage.refetchTable();
+        });
+    });
+</script>
